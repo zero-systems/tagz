@@ -83,3 +83,15 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'stati
 
     res::json!(files)
 }
+
+//---
+#[delete("{name}")]
+pub async fn delete(conn: ConnLock, filename: web::Path<Box<str>>) -> Result<'static, impl Responder> {
+    let conn = conn.lock().await;
+
+    let file = models::File::extract_from_name(filename.as_ref(), &conn)?;
+    file.unlink_all_tags(&conn)?;
+    file.delete(&conn)?;
+
+    res::no_content!()
+}

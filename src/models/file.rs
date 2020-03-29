@@ -53,6 +53,40 @@ impl File {
         tagz_cg_serv::last_inserted!(&conn, "files")
     }
 
+    pub fn delete(&self, conn: &Connection) -> SqlResult<()> {
+        conn.execute("DELETE FROM `files` WHERE `id`=?1", params! { self.id })
+            .map(|_| ())
+    }
+
+    pub fn unlink_all_tags(&self, conn: &Connection) -> SqlResult<()> {
+        conn.execute(
+            "DELETE FROM `file_tags` WHERE `file_id`=?1",
+            params! { self.id },
+        )
+        .map(|_| ())
+    }
+
+    pub fn extract_from_name<N>(
+        name: N,
+        conn: &Connection,
+    ) -> Result<Self, serv_prelude::ServiceError<'static>>
+    where
+        N: ToSql,
+    {
+        Self::find_by_name(name, conn)?.ok_or_else(|| {
+            serv_prelude::ServiceError::not_found("FILE_NOT_FOUND", "Specified file cannot be found")
+        })
+    }
+
+    pub fn find_by_name<N>(name: N, conn: &Connection) -> SqlResult<Option<Self>>
+    where
+        N: ToSql,
+    {
+        conn.prepare("SELECT * FROM `files` WHERE `name`=?1 LIMIT 1")?
+            .query_row(params! {name}, FromRow::from_row)
+            .optional()
+    }
+
     pub fn find_specific_amount_by_tags_ids_on_page(
         tags: &[i32],
         amount: u32,
