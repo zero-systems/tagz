@@ -26,10 +26,9 @@ macro_rules! insert {
 }
 
 impl File {
-    pub fn create_with_tags<P, I>(name: P, tags: I, conn: &mut Connection) -> SqlResult<Self>
+    pub fn create_with_tags<P>(name: P, tags: &[i32], conn: &mut Connection) -> SqlResult<Self>
     where
         P: ToSql,
-        I: Iterator<Item = i32>,
     {
         insert!(conn, name)?;
 
@@ -73,8 +72,7 @@ impl File {
     pub fn extract_from_id(
         id: i32,
         conn: &Connection,
-    ) -> Result<Self, serv_prelude::ServiceError<'static>>
-    {
+    ) -> Result<Self, serv_prelude::ServiceError<'static>> {
         Self::find_by_id(id, conn)?.ok_or_else(|| {
             serv_prelude::ServiceError::not_found(
                 "FILE_NOT_FOUND",
@@ -86,8 +84,7 @@ impl File {
     pub fn extract_has_file_with_id(
         id: i32,
         conn: &Connection,
-    ) -> Result<(), serv_prelude::ServiceError<'static>>
-    {
+    ) -> Result<(), serv_prelude::ServiceError<'static>> {
         if !Self::id_exists(id, conn)? {
             Err(serv_prelude::ServiceError::not_found(
                 "FILE_NOT_FOUND",
@@ -98,8 +95,17 @@ impl File {
         }
     }
 
-    pub fn find_by_id(id: i32, conn: &Connection) -> SqlResult<Option<Self>>
-    {
+    pub fn find_all_where_in_ids(ids: &[i32], conn: &Connection) -> SqlResult<Vec<Self>> {
+        let mut qs = std::iter::repeat("?,").take(ids.len()).collect::<String>();
+
+        qs.pop();
+
+        conn.prepare(&["SELECT * FROM `files` WHERE `id` IN (", qs.as_ref(), ")"].concat())?
+            .query_map(ids, FromRow::from_row)?
+            .collect()
+    }
+
+    pub fn find_by_id(id: i32, conn: &Connection) -> SqlResult<Option<Self>> {
         conn.prepare("SELECT * FROM `files` WHERE `id`=? LIMIT 1")?
             .query_row(params! {id}, FromRow::from_row)
             .optional()
@@ -133,29 +139,63 @@ impl File {
         tags: &[i32],
         amount: u32,
         page: u32,
+        exact: bool,
         conn: &Connection,
     ) -> SqlResult<Vec<Self>> {
         let mut qs = std::iter::repeat("?,").take(tags.len()).collect::<String>();
+        let mut tags = tags.to_vec();
+        tags.sort();
 
         qs.pop();
 
-        let mut files = conn.prepare(
-            &[
-                "SELECT DISTINCT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN (",
-                &qs,
-                ") ORDER BY `id` DESC LIMIT ? OFFSET ?",
-            ]
-            .concat(),
-        )?
-        .query_map(tags.iter().chain(&[amount as i32, (amount * page) as i32]), FromRow::from_row)?
-        .collect::<SqlResult<Vec<Self>>>()?;
+        let mut files = if exact {
+            let rss = relationships::FileTag::all_for_tags_ids(tags.iter(), &conn)?;
+
+            let mut files = BTreeMap::<i32, Vec<i32>>::new();
+
+            for relationships::FileTag { file_id, tag_id } in rss {
+                match files.get_mut(&file_id) {
+                    Some(v) => {
+                        v.push(tag_id);
+                    }
+                    None => {
+                        files.insert(file_id, {
+                            let mut v = Vec::with_capacity(tags.len());
+                            v.push(tag_id);
+                            v
+                        });
+                    }
+                }
+            }
+
+            let ids: Vec<_> = files
+                .into_iter()
+                .filter_map(|(file_id, list)| if list == tags { Some(file_id) } else { None })
+                .collect();
+
+            File::find_all_where_in_ids(&ids, &conn)?
+        } else {
+            conn.prepare(
+                &[
+                    "SELECT DISTINCT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN (",
+                    &qs,
+                    ") ORDER BY `id` DESC LIMIT ? OFFSET ?",
+                ]
+                .concat(),
+            )?
+            .query_map(tags.iter().chain(&[amount as i32, (amount * page) as i32]), FromRow::from_row)?
+            .collect::<SqlResult<Vec<Self>>>()?
+        };
 
         if files.len() == 0 {
             return Ok(files);
         } else {
             let relationships =
-                relationships::FileTag::all_in_file_ids(files.iter().map(|f| f.id), &conn)?;
-            let tags = Tag::find_all_where_in_ids(relationships.iter().map(|t| t.tag_id), &conn)?;
+                relationships::FileTag::all_for_files_ids(files.iter().map(|f| f.id), &conn)?;
+            let tags = Tag::find_all_where_in_ids(
+                &relationships.iter().map(|t| t.tag_id).collect::<Box<[_]>>(),
+                &conn,
+            )?;
 
             let tags_map = tags
                 .iter()
@@ -187,8 +227,7 @@ impl File {
             .map(|x: Option<i32>| x.is_some())
     }
 
-    pub fn id_exists(id: i32, conn: &Connection) -> SqlResult<bool>
-    {
+    pub fn id_exists(id: i32, conn: &Connection) -> SqlResult<bool> {
         conn.prepare("SELECT 1 FROM `files` WHERE `id`=? LIMIT 1")?
             .query_row(params! {id}, |row| row.get(0))
             .optional()

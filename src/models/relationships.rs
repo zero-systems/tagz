@@ -26,11 +26,28 @@ pub struct FileTag {
 
 impl FileTag {
     pub fn create(file_id: i32, tag_id: i32, conn: &Connection) -> SqlResult<()> {
-        conn.execute("INSERT INTO `file_tags` (`file_id`, `tag_id`) VALUES (?, ?)", params! {file_id, tag_id})
+        conn.execute(
+            "INSERT INTO `file_tags` (`file_id`, `tag_id`) VALUES (?, ?)",
+            params! {file_id, tag_id},
+        )
         .map(|_| ())
     }
 
-    pub fn all_in_file_ids<I, S>(files: I, conn: &Connection) -> SqlResult<Vec<Self>>
+    pub fn all_for_tags_ids<I, S>(tags: I, conn: &Connection) -> SqlResult<Vec<Self>>
+    where
+        I: ExactSizeIterator + Iterator<Item = S>,
+        S: ToSql,
+    {
+        let mut qs = std::iter::repeat("?,").take(tags.len()).collect::<String>();
+
+        qs.pop();
+
+        conn.prepare(&["SELECT * FROM `file_tags` WHERE `tag_id` IN (", &qs, ")"].concat())?
+            .query_map(tags, FromRow::from_row)?
+            .collect()
+    }
+
+    pub fn all_for_files_ids<I, S>(files: I, conn: &Connection) -> SqlResult<Vec<Self>>
     where
         I: ExactSizeIterator + Iterator<Item = S>,
         S: ToSql,

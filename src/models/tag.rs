@@ -83,11 +83,7 @@ impl Tag {
             .collect()
     }
 
-    pub fn find_all_where_in_ids<I, S>(ids: I, conn: &Connection) -> SqlResult<Vec<Self>>
-    where
-        I: ExactSizeIterator + Iterator<Item = S>,
-        S: ToSql,
-    {
+    pub fn find_all_where_in_ids(ids: &[i32], conn: &Connection) -> SqlResult<Vec<Self>> {
         let mut qs = std::iter::repeat("?,").take(ids.len()).collect::<String>();
 
         qs.pop();

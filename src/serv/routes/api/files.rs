@@ -51,8 +51,11 @@ pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<'static, i
 
     let tags = find_tags_by_names(&filej.tags, &conn)?;
 
-    let mut file =
-        models::File::create_with_tags(filej.name, tags.iter().map(|t| t.id), &mut conn)?;
+    let mut file = models::File::create_with_tags(
+        filej.name,
+        &tags.iter().map(|t| t.id).collect::<Box<[i32]>>(),
+        &mut conn,
+    )?;
 
     file.tags = tags;
 
@@ -64,6 +67,7 @@ pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<'static, i
 pub struct ListQuery {
     pub page: u32,
     pub tags: Box<str>,
+    pub exact: Option<bool>,
 }
 
 #[get("list")]
@@ -78,6 +82,7 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'stati
         &ids,
         *crate::config::LIST_FILES_BY_TAG_PER_PAGE.lock().await,
         query.page,
+        query.exact.unwrap_or(false),
         &conn,
     )?;
 
