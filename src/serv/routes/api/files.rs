@@ -72,9 +72,14 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'stati
     let tags = query.tags.split(',').collect::<Box<[_]>>();
     let tags = find_tags_by_names(tags.as_ref(), &conn)?;
 
-    let ids = &tags.iter().map(|t| t.id).collect::<Vec<i32>>(); // FIXME: rusqlite: ToSql for Iterators ???
+    let ids = &tags.iter().map(|t| t.id).collect::<Box<[_]>>(); // FIXME: rusqlite: ToSql for Iterators ???
 
-    let files = models::File::find_with_tags_ids(&ids, &conn)?;
+    let files = models::File::find_specific_amount_by_tags_ids_on_page(
+        &ids,
+        *crate::config::LIST_FILES_BY_TAG_PER_PAGE.lock().await,
+        query.page,
+        &conn,
+    )?;
 
     res::json!(files)
 }

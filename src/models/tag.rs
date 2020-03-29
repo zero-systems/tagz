@@ -44,10 +44,9 @@ impl Tag {
     where
         N: ToSql,
     {
-        Self::find_by_name(name, conn)?.ok_or_else(|| serv_prelude::ServiceError::not_found(
-            "TAG_NOT_FOUND",
-            "Specified tag cannot be found",
-        ))
+        Self::find_by_name(name, conn)?.ok_or_else(|| {
+            serv_prelude::ServiceError::not_found("TAG_NOT_FOUND", "Specified tag cannot be found")
+        })
     }
 
     pub fn find_by_name<N>(name: N, conn: &Connection) -> SqlResult<Option<Self>>

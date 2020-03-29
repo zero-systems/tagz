@@ -53,7 +53,12 @@ impl File {
         tagz_cg_serv::last_inserted!(&conn, "files")
     }
 
-    pub fn find_with_tags_ids(tags: &[i32], conn: &Connection) -> SqlResult<Vec<Self>> {
+    pub fn find_specific_amount_by_tags_ids_on_page(
+        tags: &[i32],
+        amount: u32,
+        page: u32,
+        conn: &Connection,
+    ) -> SqlResult<Vec<Self>> {
         let mut qs = std::iter::repeat("?,").take(tags.len()).collect::<String>();
 
         qs.pop();
@@ -62,11 +67,11 @@ impl File {
             &[
                 "SELECT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN (",
                 &qs,
-                ")",
+                ") ORDER BY `id` DESC LIMIT ? OFFSET ?",
             ]
             .concat(),
         )?
-        .query_map(tags, Self::from_row)?
+        .query_map(tags.iter().chain(&[amount as i32, (amount * page) as i32]), FromRow::from_row)?
         .collect()
     }
 
