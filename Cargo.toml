@@ -1,0 +1,24 @@
+[package]
+name = "tagz"
+version = "0.1.0"
+description = "Pseudo-database-fs restapi implementation for describing media/files by their tags."
+license = "MIT"
+authors = ["Øsystems"]
+edition = "2018"
+
+[dependencies]
+tagz-cg-from-row = { path = "./tagz-cg-from-row" }
+tagz-cg-serv = { path = "./tagz-cg-serv" }
+
+lazy_static = "1.0"
+rusqlite = { git = "https://github.com/zero-systems/rusqlite", features = ["chrono"] }
+chrono = { version = "*", features = ["serde"] }
+clap = "2.33"
+log = "0.4.8"
+env_logger = "0.7.1"
+actix-rt = "1.0.0"
+actix-web = "2.0.0"
+dirs = "2.0"
+futures = "0.3.4"
+serde_json = "*"
+serde = { version = "*", features = ["derive"] }
