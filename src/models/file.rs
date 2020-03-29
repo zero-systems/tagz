@@ -2,6 +2,7 @@ use super::*;
 
 #[derive(serde::Serialize, FromRow)]
 pub struct File {
+    #[serde(skip)]
     pub id: i32,
     pub name: String,
     #[field_default]
