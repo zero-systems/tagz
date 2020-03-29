@@ -70,7 +70,7 @@ fn has_skip(f: &syn::Field) -> bool {
         .find(|section| match section.parse_meta().unwrap() {
             Meta::Path(path) => path.segments[0].ident == "field_default",
 
-            _ => panic!("not supported"),
+            _ => false,
         })
         .is_some()
 }
