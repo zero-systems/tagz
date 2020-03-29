@@ -95,13 +95,13 @@ impl File {
         }
     }
 
-    pub fn find_all_where_in_ids(ids: &[i32], conn: &Connection) -> SqlResult<Vec<Self>> {
+    pub fn find_specific_amount_where_in_ids_on_page(ids: &[i32], amount: u32, page: u32, conn: &Connection) -> SqlResult<Vec<Self>> {
         let mut qs = std::iter::repeat("?,").take(ids.len()).collect::<String>();
 
         qs.pop();
 
-        conn.prepare(&["SELECT * FROM `files` WHERE `id` IN (", qs.as_ref(), ")"].concat())?
-            .query_map(ids, FromRow::from_row)?
+        conn.prepare(&["SELECT * FROM `files` WHERE `id` IN (", qs.as_ref(), ") ORDER BY ID DESC LIMIT ? OFFSET ?"].concat())?
+            .query_map(ids.iter().chain(&[amount as i32, (page*amount) as i32]), FromRow::from_row)?
             .collect()
     }
 
@@ -173,7 +173,7 @@ impl File {
                 .filter_map(|(file_id, list)| if list == tags { Some(file_id) } else { None })
                 .collect();
 
-            File::find_all_where_in_ids(&ids, &conn)?
+            File::find_specific_amount_where_in_ids_on_page(&ids, amount, page, &conn)?
         } else {
             conn.prepare(
                 &[
