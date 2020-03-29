@@ -81,7 +81,7 @@ impl File {
         })
     }
 
-    pub fn extract_has_file_with_id(
+    pub fn extract_id_exists(
         id: i32,
         conn: &Connection,
     ) -> Result<(), serv_prelude::ServiceError<'static>> {

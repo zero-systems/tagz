@@ -140,7 +140,7 @@ pub async fn add(
             "File already has specified tag.",
         ))
     } else {
-        models::File::extract_has_file_with_id(info.0, &conn)?;
+        models::File::extract_id_exists(info.0, &conn)?;
 
         models::relationships::FileTag::create(info.0, tag.id, &conn)?;
 
