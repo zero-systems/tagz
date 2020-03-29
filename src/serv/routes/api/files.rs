@@ -65,7 +65,7 @@ pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<'static, i
 // ---
 #[derive(Deserialize)]
 pub struct ListQuery {
-    pub page: u32,
+    pub page: u16,
     pub tags: Box<str>,
     pub exact: Option<bool>,
 }
@@ -81,7 +81,7 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'stati
     let files = models::File::find_specific_amount_by_tags_ids_on_page(
         &ids,
         *crate::config::LIST_FILES_BY_TAG_PER_PAGE.lock().await,
-        query.page,
+        query.page as u32,
         query.exact.unwrap_or(false),
         &conn,
     )?;
