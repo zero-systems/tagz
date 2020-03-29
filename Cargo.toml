@@ -1,6 +1,6 @@
 [package]
 name = "tagz"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pseudo-database-fs restapi implementation for describing media/files by their tags."
 repository = "https://github.com/zero-systems/tagz"
 license = "MIT"
