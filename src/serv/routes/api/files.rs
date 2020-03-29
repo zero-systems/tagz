@@ -7,7 +7,7 @@ pub fn find_tags_by_names<S>(
 where
     S: serde::ser::Serialize + AsRef<str> + rusqlite::ToSql,
 {
-    let tags = models::Tag::find_where_in_name(&names, &conn)?;
+    let tags = models::Tag::find_all_where_in_names(&names, &conn)?;
 
     if tags.len() != names.len() {
         let mut hashset = std::collections::HashSet::new();
@@ -86,7 +86,10 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'stati
 
 //---
 #[delete("{name}")]
-pub async fn delete(conn: ConnLock, filename: web::Path<Box<str>>) -> Result<'static, impl Responder> {
+pub async fn delete(
+    conn: ConnLock,
+    filename: web::Path<Box<str>>,
+) -> Result<'static, impl Responder> {
     let conn = conn.lock().await;
 
     let file = models::File::extract_from_name(filename.as_ref(), &conn)?;
@@ -94,4 +97,25 @@ pub async fn delete(conn: ConnLock, filename: web::Path<Box<str>>) -> Result<'st
     file.delete(&conn)?;
 
     res::no_content!()
+}
+
+//---
+#[delete("{name}")]
+pub async fn remove(
+    conn: ConnLock,
+    info: web::Path<(i32, Box<str>)>,
+) -> Result<'static, impl Responder> {
+    let conn = conn.lock().await;
+    let tag = models::Tag::extract_from_name(&info.1, &conn)?;
+
+    if models::relationships::file_id_and_tag_id_exists(info.0, tag.id, &conn)? {
+        models::relationships::delete_between_file_id_and_tag_id(info.0, tag.id, &conn)?;
+
+        res::no_content!()
+    } else {
+        Err(ServiceError::not_found(
+            "RELATIONSHIP_NOT_FOUND",
+            "File does not have specified tag or does not exist",
+        ))
+    }
 }

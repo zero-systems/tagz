@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Debug, FromRow, serde::Serialize)]
+#[derive(Clone, Debug, FromRow, serde::Serialize)]
 pub struct Tag {
     pub id: i32,
     pub name: String,
@@ -68,7 +68,7 @@ impl Tag {
             .map(|x: Option<i32>| x.is_some())
     }
 
-    pub fn find_where_in_name<S>(names: &[S], conn: &Connection) -> SqlResult<Vec<Self>>
+    pub fn find_all_where_in_names<S>(names: &[S], conn: &Connection) -> SqlResult<Vec<Self>>
     where
         S: ToSql,
     {
@@ -80,6 +80,20 @@ impl Tag {
 
         conn.prepare(&["SELECT * FROM `tags` WHERE `name` IN (", qs.as_ref(), ")"].concat())?
             .query_map(names, FromRow::from_row)?
+            .collect()
+    }
+
+    pub fn find_all_where_in_ids<I, S>(ids: I, conn: &Connection) -> SqlResult<Vec<Self>>
+    where
+        I: ExactSizeIterator + Iterator<Item = S>,
+        S: ToSql,
+    {
+        let mut qs = std::iter::repeat("?,").take(ids.len()).collect::<String>();
+
+        qs.pop();
+
+        conn.prepare(&["SELECT * FROM `tags` WHERE `id` IN (", qs.as_ref(), ")"].concat())?
+            .query_map(ids, FromRow::from_row)?
             .collect()
     }
 

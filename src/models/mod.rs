@@ -1,4 +1,5 @@
 mod file;
+pub mod relationships;
 mod tag;
 
 // FIXME: remake structure

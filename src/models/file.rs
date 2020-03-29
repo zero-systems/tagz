@@ -1,9 +1,13 @@
 use super::*;
+use serde::ser::{SerializeSeq, Serializer};
+use std::collections::BTreeMap;
 
 #[derive(serde::Serialize, FromRow)]
 pub struct File {
     pub id: i32,
     pub name: String,
+
+    #[serde(serialize_with = "serialize_tags_vec")]
     #[field_default]
     pub tags: Vec<Tag>,
     pub updated_at: NaiveDateTime,
@@ -74,7 +78,10 @@ impl File {
         N: ToSql,
     {
         Self::find_by_name(name, conn)?.ok_or_else(|| {
-            serv_prelude::ServiceError::not_found("FILE_NOT_FOUND", "Specified file cannot be found")
+            serv_prelude::ServiceError::not_found(
+                "FILE_NOT_FOUND",
+                "Specified file cannot be found",
+            )
         })
     }
 
@@ -97,16 +104,42 @@ impl File {
 
         qs.pop();
 
-        conn.prepare(
+        let mut files = conn.prepare(
             &[
-                "SELECT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN (",
+                "SELECT DISTINCT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN (",
                 &qs,
                 ") ORDER BY `id` DESC LIMIT ? OFFSET ?",
             ]
             .concat(),
         )?
         .query_map(tags.iter().chain(&[amount as i32, (amount * page) as i32]), FromRow::from_row)?
-        .collect()
+        .collect::<SqlResult<Vec<Self>>>()?;
+
+        if files.len() == 0 {
+            return Ok(files);
+        } else {
+            let relationships =
+                relationships::FileTag::all_in_file_ids(files.iter().map(|f| f.id), &conn)?;
+            let tags = Tag::find_all_where_in_ids(relationships.iter().map(|t| t.tag_id), &conn)?;
+
+            let tags_map = tags
+                .iter()
+                .map(|t| (t.id, t))
+                .collect::<BTreeMap<i32, &Tag>>();
+            let mut files_map = files
+                .iter_mut()
+                .map(|f| (f.id, f))
+                .collect::<BTreeMap<i32, &mut File>>(); // FIXME: mut ???
+
+            for relationships::FileTag { tag_id, file_id } in relationships {
+                let file = files_map.get_mut(&file_id).unwrap(); // FIXME: get_mut ???
+                let tag = tags_map.get(&tag_id).unwrap();
+
+                file.tags.push(tag.to_owned().clone());
+            }
+
+            Ok(files)
+        }
     }
 
     pub fn name_exists<P>(name: P, conn: &Connection) -> SqlResult<bool>
@@ -124,4 +157,15 @@ impl File {
 
         Ok(())
     }
+}
+
+fn serialize_tags_vec<S>(src: &Vec<Tag>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut seq = serializer.serialize_seq(Some(src.len()))?;
+    for e in src {
+        seq.serialize_element(&e.name)?;
+    }
+    seq.end()
 }

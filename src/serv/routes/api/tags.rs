@@ -51,11 +51,3 @@ pub async fn delete(
         res::no_content!()
     }
 }
-
-//---
-#[get("list")]
-pub async fn list(conn: ConnLock) -> Result<'static, impl Responder> {
-    let conn = conn.lock().await;
-
-    res::json!(models::Tag::all(&conn)?.iter().map(|tag| &tag.name).collect::<Box<[_]>>())
-}
