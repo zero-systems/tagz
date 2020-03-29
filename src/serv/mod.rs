@@ -34,6 +34,11 @@ pub async fn run(connection: Connection, cfg: AppConfig) -> std::io::Result<()> 
                         .service(apis::files::create)
                         .service(apis::files::delete)
                         .service(apis::files::list)
+
+                        .service(web::scope("{file_id}")
+                            .service(apis::files::add)
+                            .service(apis::files::remove)
+                            )
                     ),
             ))
     })

@@ -115,7 +115,30 @@ pub async fn remove(
     } else {
         Err(ServiceError::not_found(
             "RELATIONSHIP_NOT_FOUND",
-            "File does not have specified tag or does not exist",
+            "File does not have specified tag or does not exist.",
         ))
+    }
+}
+
+//---
+#[post("{name}")]
+pub async fn add(
+    conn: ConnLock,
+    info: web::Path<(i32, Box<str>)>,
+) -> Result<'static, impl Responder> {
+    let conn = conn.lock().await;
+    let tag = models::Tag::extract_from_name(&info.1, &conn)?;
+
+    if models::relationships::file_id_and_tag_id_exists(info.0, tag.id, &conn)? {
+        Err(ServiceError::bad_request(
+            "RELATIONSHIP_EXISTS",
+            "File already has specified tag.",
+        ))
+    } else {
+        models::File::extract_has_file_with_id(info.0, &conn)?;
+
+        models::relationships::FileTag::create(info.0, tag.id, &conn)?;
+
+        res::no_content!()
     }
 }

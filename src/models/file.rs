@@ -70,6 +70,41 @@ impl File {
         .map(|_| ())
     }
 
+    pub fn extract_from_id(
+        id: i32,
+        conn: &Connection,
+    ) -> Result<Self, serv_prelude::ServiceError<'static>>
+    {
+        Self::find_by_id(id, conn)?.ok_or_else(|| {
+            serv_prelude::ServiceError::not_found(
+                "FILE_NOT_FOUND",
+                "Specified file_id cannot be found",
+            )
+        })
+    }
+
+    pub fn extract_has_file_with_id(
+        id: i32,
+        conn: &Connection,
+    ) -> Result<(), serv_prelude::ServiceError<'static>>
+    {
+        if !Self::id_exists(id, conn)? {
+            Err(serv_prelude::ServiceError::not_found(
+                "FILE_NOT_FOUND",
+                "Specified file_id cannot be found",
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn find_by_id(id: i32, conn: &Connection) -> SqlResult<Option<Self>>
+    {
+        conn.prepare("SELECT * FROM `files` WHERE `id`=? LIMIT 1")?
+            .query_row(params! {id}, FromRow::from_row)
+            .optional()
+    }
+
     pub fn extract_from_name<N>(
         name: N,
         conn: &Connection,
@@ -148,6 +183,14 @@ impl File {
     {
         conn.prepare("SELECT 1 FROM `files` WHERE `name`=?1 LIMIT 1")?
             .query_row(params! {name}, |row| row.get(0))
+            .optional()
+            .map(|x: Option<i32>| x.is_some())
+    }
+
+    pub fn id_exists(id: i32, conn: &Connection) -> SqlResult<bool>
+    {
+        conn.prepare("SELECT 1 FROM `files` WHERE `id`=? LIMIT 1")?
+            .query_row(params! {id}, |row| row.get(0))
             .optional()
             .map(|x: Option<i32>| x.is_some())
     }
