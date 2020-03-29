@@ -4,10 +4,10 @@ use std::sync::Arc;
 lazy_static! {
     pub static ref LIST_TAGS_PER_PAGE: Arc<Mutex<u32>> = Arc::new(Mutex::new(50));
     pub static ref LIST_FILES_PER_PAGE: Arc<Mutex<u32>> = Arc::new(Mutex::new(50));
-    pub static ref LIST_FILES_BY_TAG_PER_PAGE: Arc<Mutex<u32>> = Arc::new(Mutex::new(50));
+    pub static ref LIST_FILES_BY_TAG_PER_PAGE: Arc<Mutex<u32>> = Arc::new(Mutex::new(2));
 }
 
-pub static TABLES: &[&str] = &[
+pub static TABLES: &'static [&'static str] = &[
     // `files`
     r#"
 		CREATE TABLE `files` (
