@@ -2,7 +2,7 @@ use super::*;
 
 pub fn file_id_and_tag_id_exists(file_id: i32, tag_id: i32, conn: &Connection) -> SqlResult<bool> {
     conn.prepare("SELECT 1 FROM `file_tags` WHERE `tag_id`=? AND `file_id`=? LIMIT 1")?
-        .query_row(params! {file_id, tag_id}, |row| row.get(0))
+        .query_row(params! {tag_id, file_id}, |row| row.get(0))
         .optional()
         .map(|x: Option<i32>| x.is_some())
 }
