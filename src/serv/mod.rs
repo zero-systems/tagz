@@ -28,6 +28,7 @@ pub async fn run(connection: Connection, cfg: AppConfig) -> std::io::Result<()> 
                     .service(web::scope("tags")
                         .service(apis::tags::create)
                         .service(apis::tags::delete)
+                        .service(apis::tags::list)
                     )
                     .service(web::scope("files")
                         .service(apis::files::create)
