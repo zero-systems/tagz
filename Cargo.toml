@@ -12,7 +12,7 @@ tagz-cg-from-row = { path = "./tagz-cg-from-row" }
 tagz-cg-serv = { path = "./tagz-cg-serv" }
 
 lazy_static = "1.0"
-rusqlite = { git = "https://github.com/zero-systems/rusqlite", features = ["chrono"] }
+rusqlite = { git = "https://github.com/zero-systems/rusqlite", features = ["array", "modern_sqlite", "chrono"] }
 chrono = { version = "*", features = ["serde"] }
 clap = "2.33"
 log = "0.4.8"

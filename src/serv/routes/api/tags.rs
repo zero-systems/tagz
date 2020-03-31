@@ -34,7 +34,7 @@ pub async fn delete(
     let conn = conn.lock().await;
 
     // get tag
-    let tag = models::Tag::extract_from_name(name.as_ref(), &conn)?;
+    let tag = models::Tag::extract_from_name(name.as_ref().as_ref(), &conn)?;
 
     // check if there are related files
     let has_files = tag.has_related_files(&conn)?;

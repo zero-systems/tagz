@@ -20,6 +20,7 @@ pub fn get_conn(path: &Path) -> SqlResult<Connection> {
     let exists = path.exists();
 
     let connection = Connection::open(path)?;
+    rusqlite::vtab::array::load_module(&connection).unwrap();
 
     if !exists {
         prepare_tables(&connection)?;

@@ -95,14 +95,20 @@ impl File {
         }
     }
 
-    pub fn find_specific_amount_where_in_ids_on_page(ids: &[i32], amount: u32, page: u32, conn: &Connection) -> SqlResult<Vec<Self>> {
-        let mut qs = std::iter::repeat("?,").take(ids.len()).collect::<String>();
+    pub fn find_specific_amount_where_in_ids_on_page(
+        ids: &[i32],
+        amount: u32,
+        page: u32,
+        conn: &Connection,
+    ) -> SqlResult<Vec<Self>> {
+        let ids = RuSqlArray::new(ids.iter().map(|x| RuSqlValue::from(*x)).collect());
 
-        qs.pop();
-
-        conn.prepare(&["SELECT * FROM `files` WHERE `id` IN (", qs.as_ref(), ") ORDER BY ID DESC LIMIT ? OFFSET ?"].concat())?
-            .query_map(ids.iter().chain(&[amount as i32, (page*amount) as i32]), FromRow::from_row)?
-            .collect()
+        conn.prepare(
+            &["SELECT * FROM `files` WHERE `id` IN rarray(?) ORDER BY `id` DESC LIMIT ? OFFSET ?"]
+                .concat(),
+        )?
+        .query_map(params! { &ids, amount, amount * page }, FromRow::from_row)?
+        .collect()
     }
 
     pub fn find_by_id(id: i32, conn: &Connection) -> SqlResult<Option<Self>> {
@@ -142,11 +148,8 @@ impl File {
         exact: bool,
         conn: &Connection,
     ) -> SqlResult<Vec<Self>> {
-        let mut qs = std::iter::repeat("?,").take(tags.len()).collect::<String>();
         let mut tags = tags.to_vec();
         tags.sort();
-
-        qs.pop();
 
         let mut files = if exact {
             let rss = relationships::FileTag::all_for_tags_ids(tags.iter(), &conn)?;
@@ -175,15 +178,12 @@ impl File {
 
             File::find_specific_amount_where_in_ids_on_page(&ids, amount, page, &conn)?
         } else {
+            let tags_array = RuSqlArray::new(tags.iter().map(|x| RuSqlValue::from(*x)).collect());
+
             conn.prepare(
-                &[
-                    "SELECT DISTINCT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN (",
-                    &qs,
-                    ") ORDER BY `id` DESC LIMIT ? OFFSET ?",
-                ]
-                .concat(),
+                "SELECT DISTINCT `files`.* FROM `file_tags` INNER JOIN `files` ON `id`=`file_id` WHERE `file_tags`.`tag_id` IN rarray(?) ORDER BY `id` DESC LIMIT ? OFFSET ?",
             )?
-            .query_map(tags.iter().chain(&[amount as i32, (amount * page) as i32]), FromRow::from_row)?
+            .query_map(params!{&tags_array, amount, amount * page}, FromRow::from_row)?
             .collect::<SqlResult<Vec<Self>>>()?
         };
 

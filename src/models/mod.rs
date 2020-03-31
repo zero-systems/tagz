@@ -10,7 +10,9 @@ mod serv_prelude {
 
 use crate::{Connection, FromRow, SqlResult};
 use chrono::NaiveDateTime;
-use rusqlite::{params, OptionalExtension, ToSql};
+use rusqlite::{
+    params, types::Value as RuSqlValue, vtab::array::Array as RuSqlArray, OptionalExtension, ToSql,
+};
 use tagz_cg_from_row::FromRow;
 
 pub use file::File;
