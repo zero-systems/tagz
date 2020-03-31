@@ -68,28 +68,20 @@ impl Tag {
             .map(|x: Option<i32>| x.is_some())
     }
 
-    pub fn find_all_where_in_names<S>(names: &[S], conn: &Connection) -> SqlResult<Vec<Self>>
-    where
-        S: ToSql,
+    pub fn find_all_where_in_names<S: ToString>(names: &[S], conn: &Connection) -> SqlResult<Vec<Self>>
     {
-        let mut qs = std::iter::repeat("?,")
-            .take(names.len())
-            .collect::<String>();
+        let names = RuSqlArray::new(names.into_iter().map(|x| RuSqlValue::Text(x.to_string())).collect());
 
-        qs.pop();
-
-        conn.prepare(&["SELECT * FROM `tags` WHERE `name` IN (", qs.as_ref(), ")"].concat())?
-            .query_map(names, FromRow::from_row)?
+        conn.prepare("SELECT * FROM `tags` WHERE `name` IN rarray(?)")?
+            .query_map(&[&names], FromRow::from_row)?
             .collect()
     }
 
     pub fn find_all_where_in_ids(ids: &[i32], conn: &Connection) -> SqlResult<Vec<Self>> {
-        let mut qs = std::iter::repeat("?,").take(ids.len()).collect::<String>();
+        let ids = RuSqlArray::new(ids.iter().map(|x| RuSqlValue::Integer(*x as i64)).collect());
 
-        qs.pop();
-
-        conn.prepare(&["SELECT * FROM `tags` WHERE `id` IN (", qs.as_ref(), ")"].concat())?
-            .query_map(ids, FromRow::from_row)?
+        conn.prepare("SELECT * FROM `tags` WHERE `id` IN rarray(?)")?
+            .query_map(&[&ids], FromRow::from_row)?
             .collect()
     }
 

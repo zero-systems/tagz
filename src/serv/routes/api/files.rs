@@ -5,9 +5,9 @@ pub fn find_tags_by_names<S>(
     conn: &Connection,
 ) -> std::result::Result<Vec<models::Tag>, ServiceError<'static>>
 where
-    S: serde::ser::Serialize + AsRef<str> + rusqlite::ToSql,
+    S: serde::ser::Serialize + AsRef<str> + ToString,
 {
-    let tags = models::Tag::find_all_where_in_names(&names, &conn)?;
+    let tags = models::Tag::find_all_where_in_names(names, &conn)?;
 
     if tags.len() != names.len() {
         let mut hashset = std::collections::HashSet::new();

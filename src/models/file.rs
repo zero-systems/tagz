@@ -104,8 +104,7 @@ impl File {
         let ids = RuSqlArray::new(ids.iter().map(|x| RuSqlValue::from(*x)).collect());
 
         conn.prepare(
-            &["SELECT * FROM `files` WHERE `id` IN rarray(?) ORDER BY `id` DESC LIMIT ? OFFSET ?"]
-                .concat(),
+            "SELECT * FROM `files` WHERE `id` IN rarray(?) ORDER BY `id` DESC LIMIT ? OFFSET ?",
         )?
         .query_map(params! { &ids, amount, amount * page }, FromRow::from_row)?
         .collect()
