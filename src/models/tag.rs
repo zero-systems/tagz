@@ -68,9 +68,16 @@ impl Tag {
             .map(|x: Option<i32>| x.is_some())
     }
 
-    pub fn find_all_where_in_names<S: ToString>(names: &[S], conn: &Connection) -> SqlResult<Vec<Self>>
-    {
-        let names = RuSqlArray::new(names.into_iter().map(|x| RuSqlValue::Text(x.to_string())).collect());
+    pub fn find_all_where_in_names<S: ToString>(
+        names: &[S],
+        conn: &Connection,
+    ) -> SqlResult<Vec<Self>> {
+        let names = RuSqlArray::new(
+            names
+                .into_iter()
+                .map(|x| RuSqlValue::Text(x.to_string()))
+                .collect(),
+        );
 
         conn.prepare("SELECT * FROM `tags` WHERE `name` IN rarray(?)")?
             .query_map(&[&names], FromRow::from_row)?
