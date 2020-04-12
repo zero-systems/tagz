@@ -7,4 +7,4 @@ use serde::Deserialize;
 pub mod api;
 
 pub type ConnLock = web::Data<Mutex<Connection>>;
-pub type Result<'a, T> = std::result::Result<T, ServiceError<'a>>;
+pub type Result<T> = std::result::Result<T, ServiceError>;

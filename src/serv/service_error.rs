@@ -8,20 +8,20 @@ use std::{
 };
 
 #[derive(serde::Serialize, Debug)]
-pub struct ServiceError<'a> {
+pub struct ServiceError {
     #[serde(skip)]
     status_code: StatusCode,
 
-    status: &'a str,
-    message: Cow<'a, str>,
+    status: &'static str,
+    message: Cow<'static, str>,
 
     details: Option<Value>, // IDEA: maybe Box<dyn Serialize> ?
 }
 
-impl<'a> ServiceError<'a> {
-    pub fn bad_request<C>(status: &'a str, message: C) -> Self
+impl ServiceError {
+    pub fn bad_request<C>(status: &'static str, message: C) -> Self
     where
-        C: Into<Cow<'a, str>>,
+        C: Into<Cow<'static, str>>,
     {
         Self {
             status_code: StatusCode::BAD_REQUEST,
@@ -31,9 +31,9 @@ impl<'a> ServiceError<'a> {
         }
     }
 
-    pub fn not_found<C>(status: &'a str, message: C) -> Self
+    pub fn not_found<C>(status: &'static str, message: C) -> Self
     where
-        C: Into<Cow<'a, str>>,
+        C: Into<Cow<'static, str>>,
     {
         Self {
             status_code: StatusCode::NOT_FOUND,
@@ -52,14 +52,14 @@ impl<'a> ServiceError<'a> {
     }
 }
 
-impl Display for ServiceError<'_> {
+impl Display for ServiceError {
     #[inline]
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         Debug::fmt(self, fmt)
     }
 }
 
-impl From<SqlError> for ServiceError<'_> {
+impl From<SqlError> for ServiceError {
     fn from(err: SqlError) -> Self {
         Self {
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
@@ -70,7 +70,7 @@ impl From<SqlError> for ServiceError<'_> {
     }
 }
 
-impl ResponseError for ServiceError<'_> {
+impl ResponseError for ServiceError {
     #[inline]
     fn status_code(&self) -> StatusCode {
         self.status_code
@@ -79,7 +79,7 @@ impl ResponseError for ServiceError<'_> {
     fn error_response(&self) -> HttpResponse<Body> {
         #[derive(serde::Serialize)]
         struct ErrorBody<'a> {
-            err: &'a ServiceError<'a>,
+            err: &'a ServiceError,
         }
 
         HttpResponse::build(self.status_code).json(ErrorBody { err: self })

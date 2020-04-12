@@ -72,7 +72,7 @@ impl File {
     pub fn extract_from_id(
         id: i32,
         conn: &Connection,
-    ) -> Result<Self, serv_prelude::ServiceError<'static>> {
+    ) -> Result<Self, serv_prelude::ServiceError> {
         Self::find_by_id(id, conn)?.ok_or_else(|| {
             serv_prelude::ServiceError::not_found(
                 "FILE_NOT_FOUND",
@@ -84,7 +84,7 @@ impl File {
     pub fn extract_id_exists(
         id: i32,
         conn: &Connection,
-    ) -> Result<(), serv_prelude::ServiceError<'static>> {
+    ) -> Result<(), serv_prelude::ServiceError> {
         if !Self::id_exists(id, conn)? {
             Err(serv_prelude::ServiceError::not_found(
                 "FILE_NOT_FOUND",
@@ -119,7 +119,7 @@ impl File {
     pub fn extract_from_name<N>(
         name: N,
         conn: &Connection,
-    ) -> Result<Self, serv_prelude::ServiceError<'static>>
+    ) -> Result<Self, serv_prelude::ServiceError>
     where
         N: ToSql,
     {

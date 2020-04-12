@@ -6,7 +6,7 @@ pub struct Tag {
 }
 
 #[post("create")]
-pub async fn create(conn: ConnLock, tagj: web::Json<Tag>) -> Result<'static, impl Responder> {
+pub async fn create(conn: ConnLock, tagj: web::Json<Tag>) -> Result<impl Responder> {
     let conn = conn.lock().await;
 
     if models::Tag::name_exists(tagj.name.as_ref(), &conn)? {
@@ -30,7 +30,7 @@ pub async fn delete(
     conn: ConnLock,
     query: web::Query<DeleteQuery>,
     name: web::Path<Box<str>>,
-) -> Result<'static, impl Responder> {
+) -> Result<impl Responder> {
     let conn = conn.lock().await;
 
     // get tag
@@ -54,7 +54,7 @@ pub async fn delete(
 
 //---
 #[get("list")]
-pub async fn list(conn: ConnLock) -> Result<'static, impl Responder> {
+pub async fn list(conn: ConnLock) -> Result<impl Responder> {
     let conn = conn.lock().await;
 
     res::json!(models::Tag::all(&conn)?

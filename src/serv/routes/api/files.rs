@@ -3,7 +3,7 @@ use super::*;
 pub fn find_tags_by_names<S>(
     names: &[S],
     conn: &Connection,
-) -> std::result::Result<Vec<models::Tag>, ServiceError<'static>>
+) -> std::result::Result<Vec<models::Tag>, ServiceError>
 where
     S: serde::ser::Serialize + AsRef<str> + ToString,
 {
@@ -41,7 +41,7 @@ pub struct File {
 }
 
 #[post("create")]
-pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<'static, impl Responder> {
+pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<impl Responder> {
     let filej = filej.0;
     let mut conn = conn.lock().await;
 
@@ -71,7 +71,7 @@ pub struct ListQuery {
 }
 
 #[get("list")]
-pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'static, impl Responder> {
+pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<impl Responder> {
     let conn = conn.lock().await;
     let tags = query.tags.split(',').collect::<Box<[_]>>();
     let tags = find_tags_by_names(tags.as_ref(), &conn)?;
@@ -94,7 +94,7 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<'stati
 pub async fn delete(
     conn: ConnLock,
     filename: web::Path<Box<str>>,
-) -> Result<'static, impl Responder> {
+) -> Result<impl Responder> {
     let conn = conn.lock().await;
 
     let file = models::File::extract_from_name(filename.as_ref(), &conn)?;
@@ -109,7 +109,7 @@ pub async fn delete(
 pub async fn remove(
     conn: ConnLock,
     info: web::Path<(i32, Box<str>)>,
-) -> Result<'static, impl Responder> {
+) -> Result<impl Responder> {
     let conn = conn.lock().await;
     let tag = models::Tag::extract_from_name(&info.1, &conn)?;
 
@@ -130,7 +130,7 @@ pub async fn remove(
 pub async fn add(
     conn: ConnLock,
     info: web::Path<(i32, Box<str>)>,
-) -> Result<'static, impl Responder> {
+) -> Result<impl Responder> {
     let conn = conn.lock().await;
     let tag = models::Tag::extract_from_name(&info.1, &conn)?;
 

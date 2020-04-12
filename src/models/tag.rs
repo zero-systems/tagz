@@ -40,7 +40,7 @@ impl Tag {
     pub fn extract_from_name<N>(
         name: N,
         conn: &Connection,
-    ) -> Result<Self, serv_prelude::ServiceError<'static>>
+    ) -> Result<Self, serv_prelude::ServiceError>
     where
         N: ToSql,
     {
