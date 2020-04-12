@@ -69,10 +69,7 @@ impl File {
         .map(|_| ())
     }
 
-    pub fn extract_from_id(
-        id: i32,
-        conn: &Connection,
-    ) -> Result<Self, serv_prelude::ServiceError> {
+    pub fn extract_from_id(id: i32, conn: &Connection) -> Result<Self, serv_prelude::ServiceError> {
         Self::find_by_id(id, conn)?.ok_or_else(|| {
             serv_prelude::ServiceError::not_found(
                 "FILE_NOT_FOUND",
@@ -81,10 +78,7 @@ impl File {
         })
     }
 
-    pub fn extract_id_exists(
-        id: i32,
-        conn: &Connection,
-    ) -> Result<(), serv_prelude::ServiceError> {
+    pub fn extract_id_exists(id: i32, conn: &Connection) -> Result<(), serv_prelude::ServiceError> {
         if !Self::id_exists(id, conn)? {
             Err(serv_prelude::ServiceError::not_found(
                 "FILE_NOT_FOUND",
@@ -186,8 +180,8 @@ impl File {
             .collect::<SqlResult<Vec<Self>>>()?
         };
 
-        if files.len() == 0 {
-            return Ok(files);
+        if files.is_empty() {
+            Ok(files)
         } else {
             let relationships =
                 relationships::FileTag::all_for_files_ids(files.iter().map(|f| f.id), &conn)?;
@@ -240,7 +234,7 @@ impl File {
     }
 }
 
-fn serialize_tags_vec<S>(src: &Vec<Tag>, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_tags_vec<S>(src: &[Tag], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

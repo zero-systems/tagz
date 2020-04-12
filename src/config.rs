@@ -7,7 +7,7 @@ lazy_static! {
     pub static ref LIST_FILES_BY_TAG_PER_PAGE: Arc<Mutex<u32>> = Arc::new(Mutex::new(2));
 }
 
-pub static TABLES: &'static [&'static str] = &[
+pub static TABLES: &[&str] = &[
     // `files`
     r#"
 		CREATE TABLE `files` (

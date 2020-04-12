@@ -91,10 +91,7 @@ pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<impl R
 
 //---
 #[delete("{name}")]
-pub async fn delete(
-    conn: ConnLock,
-    filename: web::Path<Box<str>>,
-) -> Result<impl Responder> {
+pub async fn delete(conn: ConnLock, filename: web::Path<Box<str>>) -> Result<impl Responder> {
     let conn = conn.lock().await;
 
     let file = models::File::extract_from_name(filename.as_ref(), &conn)?;
@@ -106,10 +103,7 @@ pub async fn delete(
 
 //---
 #[delete("{name}")]
-pub async fn remove(
-    conn: ConnLock,
-    info: web::Path<(i32, Box<str>)>,
-) -> Result<impl Responder> {
+pub async fn remove(conn: ConnLock, info: web::Path<(i32, Box<str>)>) -> Result<impl Responder> {
     let conn = conn.lock().await;
     let tag = models::Tag::extract_from_name(&info.1, &conn)?;
 
@@ -127,10 +121,7 @@ pub async fn remove(
 
 //---
 #[post("{name}")]
-pub async fn add(
-    conn: ConnLock,
-    info: web::Path<(i32, Box<str>)>,
-) -> Result<impl Responder> {
+pub async fn add(conn: ConnLock, info: web::Path<(i32, Box<str>)>) -> Result<impl Responder> {
     let conn = conn.lock().await;
     let tag = models::Tag::extract_from_name(&info.1, &conn)?;
 

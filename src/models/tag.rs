@@ -74,7 +74,7 @@ impl Tag {
     ) -> SqlResult<Vec<Self>> {
         let names = RuSqlArray::new(
             names
-                .into_iter()
+                .iter()
                 .map(|x| RuSqlValue::Text(x.to_string()))
                 .collect(),
         );
