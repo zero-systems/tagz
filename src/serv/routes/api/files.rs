@@ -24,11 +24,9 @@ where
             }
         }
 
-        Err(ServiceError::bad_request(
-            "TAGS_NOT_FOUND",
-            "Could not found some tags to create file. Check details to get list of unknown tags.",
-        )
-        .with_details(lost))
+        Err(service_error::consts::TAGS_NOT_FOUND
+            .clone()
+            .with_details(lost))
     } else {
         Ok(tags)
     }
@@ -46,7 +44,7 @@ pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<impl Respo
     let mut conn = conn.lock().await;
 
     if models::File::name_exists(&filej.name, &conn)? {
-        return Err(ServiceError::bad_request("DUPLICATION", "File with specified name already exists. You must edit or delete it instead of recreating."));
+        return Err(service_error::consts::FILE_DUPLICATION.clone());
     }
 
     let tags = find_tags_by_names(&filej.tags, &conn)?;
@@ -112,10 +110,7 @@ pub async fn remove(conn: ConnLock, info: web::Path<(i32, Box<str>)>) -> Result<
 
         res::no_content!()
     } else {
-        Err(ServiceError::not_found(
-            "RELATIONSHIP_NOT_FOUND",
-            "File does not have specified tag or does not exist.",
-        ))
+        Err(service_error::consts::REL_FILE_TAG_NOT_FOUND.clone())
     }
 }
 
@@ -126,10 +121,7 @@ pub async fn add(conn: ConnLock, info: web::Path<(i32, Box<str>)>) -> Result<imp
     let tag = models::Tag::extract_from_name(&info.1, &conn)?;
 
     if models::relationships::file_id_and_tag_id_exists(info.0, tag.id, &conn)? {
-        Err(ServiceError::bad_request(
-            "RELATIONSHIP_EXISTS",
-            "File already has specified tag.",
-        ))
+        Err(service_error::consts::REL_FILE_TAG_EXISTS.clone())
     } else {
         models::File::extract_id_exists(info.0, &conn)?;
 

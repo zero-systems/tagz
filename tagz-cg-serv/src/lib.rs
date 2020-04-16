@@ -3,14 +3,14 @@ macro_rules! json {
     ($code:ident, $obj:expr) => {
         Ok(
             actix_web::HttpResponse::build(actix_web::http::StatusCode::$code)
-                .json(serde_json::json!({ "ok": $obj })),
+                .json(serde_json::json!({ "Ok": $obj })),
         )
     };
 
     ($obj:expr) => {
         Ok(
             actix_web::HttpResponse::build(actix_web::http::StatusCode::OK)
-                .json(serde_json::json!({ "ok": $obj })),
+                .json(serde_json::json!({ "Ok": $obj })),
         );
     };
 }

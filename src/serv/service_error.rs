@@ -7,7 +7,43 @@ use std::{
     fmt::{Debug, Display, Formatter, Result as FmtResult},
 };
 
-#[derive(serde::Serialize, Debug)]
+pub mod consts {
+    use super::*;
+
+    lazy_static! {
+        pub static ref TAGS_NOT_FOUND: ServiceError = ServiceError::bad_request(
+            "TAGS_NOT_FOUND",
+            "Could not found some tags to create file. Check details to get list of unknown tags.",
+        );
+
+        pub static ref FILE_DUPLICATION: ServiceError = ServiceError::bad_request(
+            "FILE_DUPLICATION",
+            "File with specified name already exists. You must edit or delete it instead of recreating."
+        );
+
+        pub static ref REL_FILE_TAG_NOT_FOUND: ServiceError = ServiceError::not_found(
+            "REL_FILE_TAG_NOT_FOUND",
+            "File does not have specified tag or does not exist.",
+        );
+
+        pub static ref REL_FILE_TAG_EXISTS: ServiceError = ServiceError::bad_request(
+            "REL_FILE_TAG_EXISTS",
+            "File already has specified tag.",
+        );
+
+        pub static ref TAG_DUPLICATION: ServiceError = ServiceError::bad_request(
+            "TAG_DUPLICATION",
+            "Tag with the given name already exists.",
+        );
+
+        pub static ref CONFIRMATION_REQUIRED: ServiceError = ServiceError::bad_request(
+            "CONFIRMATION_REQUIRED",
+            ""
+        );
+    }
+}
+
+#[derive(Clone, serde::Serialize, Debug)]
 pub struct ServiceError {
     #[serde(skip)]
     status_code: StatusCode,
@@ -19,6 +55,14 @@ pub struct ServiceError {
 }
 
 impl ServiceError {
+    pub fn with_message<C>(mut self, message: C) -> Self
+    where
+        C: Into<Cow<'static, str>>,
+    {
+        self.message = message.into();
+        self
+    }
+
     pub fn bad_request<C>(status: &'static str, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
@@ -78,6 +122,7 @@ impl ResponseError for ServiceError {
 
     fn error_response(&self) -> HttpResponse<Body> {
         #[derive(serde::Serialize)]
+        #[serde(rename_all = "PascalCase")]
         struct ErrorBody<'a> {
             err: &'a ServiceError,
         }

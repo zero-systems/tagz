@@ -10,10 +10,7 @@ pub async fn create(conn: ConnLock, tagj: web::Json<Tag>) -> Result<impl Respond
     let conn = conn.lock().await;
 
     if models::Tag::name_exists(tagj.name.as_ref(), &conn)? {
-        Err(ServiceError::bad_request(
-            "DUPLICATION",
-            "Tag with the given name already exists.",
-        ))
+        Err(service_error::consts::TAG_DUPLICATION.clone())
     } else {
         res::json!(models::Tag::create(tagj.name.as_ref(), &conn)?)
     }
@@ -40,7 +37,7 @@ pub async fn delete(
     let has_files = tag.has_related_files(&conn)?;
 
     if has_files && query.confirm != Some(true) {
-        Err(ServiceError::bad_request("CONFIRMATION_REQUIRED", "Tag has related files, so all files with this tag will be unlinked. Confirm action by adding `?confirm=true` to query url."))
+        Err(service_error::consts::CONFIRMATION_REQUIRED.clone().with_message("Tag has related files, so all files with this tag will be unlinked. Confirm action by adding `?confirm=true` to query url."))
     } else {
         if has_files {
             tag.unlink_all_files(&conn)?;

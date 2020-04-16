@@ -1,4 +1,4 @@
-use super::ServiceError;
+use super::{service_error, ServiceError};
 use crate::Connection;
 use actix_web::{delete, get, post, web, Responder};
 use futures::lock::Mutex;
