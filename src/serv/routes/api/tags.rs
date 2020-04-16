@@ -5,7 +5,7 @@ pub struct Tag {
     pub name: Box<str>,
 }
 
-#[post("create")]
+#[post("")]
 pub async fn create(conn: ConnLock, tagj: web::Json<Tag>) -> Result<impl Responder> {
     let conn = conn.lock().await;
 
@@ -50,7 +50,7 @@ pub async fn delete(
 }
 
 //---
-#[get("list")]
+#[get("")]
 pub async fn list(conn: ConnLock) -> Result<impl Responder> {
     let conn = conn.lock().await;
 

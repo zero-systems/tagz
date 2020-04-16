@@ -38,7 +38,7 @@ pub struct File {
     pub tags: Vec<Box<str>>,
 }
 
-#[post("create")]
+#[post("")]
 pub async fn create(conn: ConnLock, filej: web::Json<File>) -> Result<impl Responder> {
     let filej = filej.0;
     let mut conn = conn.lock().await;
@@ -68,7 +68,7 @@ pub struct ListQuery {
     pub exact: Option<bool>,
 }
 
-#[get("list")]
+#[get("")]
 pub async fn list(conn: ConnLock, query: web::Query<ListQuery>) -> Result<impl Responder> {
     let conn = conn.lock().await;
     let tags = query.tags.split(',').collect::<Box<[_]>>();
